@@ -1,0 +1,79 @@
+# StorageClass for high-performance dataset storage (gp3 SSD)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  iops: "3000"
+  throughput: "125"
+  encrypted: "true"
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+---
+# High-throughput storage for large ML datasets
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3-high-throughput
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  iops: "16000"
+  throughput: "1000"
+  encrypted: "true"
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+---
+# PVC for ML training datasets (large, high throughput)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dataset-pvc
+  namespace: ai-workloads
+  labels:
+    purpose: ml-dataset
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: gp3-high-throughput
+  resources:
+    requests:
+      storage: 500Gi
+---
+# PVC for trained model output
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: model-output-pvc
+  namespace: ai-workloads
+  labels:
+    purpose: ml-model-output
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: gp3
+  resources:
+    requests:
+      storage: 100Gi
+---
+# PVC for model serving (shared read access)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: model-serving-pvc
+  namespace: ai-workloads
+  labels:
+    purpose: ml-model-serving
+spec:
+  accessModes:
+  - ReadOnlyMany
+  storageClassName: gp3
+  resources:
+    requests:
+      storage: 100Gi

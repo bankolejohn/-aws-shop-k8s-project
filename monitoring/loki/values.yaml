@@ -1,0 +1,98 @@
+loki:
+  auth_enabled: false
+
+  commonConfig:
+    replication_factor: 1
+
+  storage:
+    type: s3
+    s3:
+      region: us-west-2
+      bucketnames: loki-chunks
+      s3forcepathstyle: false
+
+  schemaConfig:
+    configs:
+    - from: "2024-01-01"
+      store: tsdb
+      object_store: s3
+      schema: v13
+      index:
+        prefix: loki_index_
+        period: 24h
+
+  limits_config:
+    retention_period: 30d
+    ingestion_rate_mb: 16
+    ingestion_burst_size_mb: 32
+    max_query_series: 10000
+
+  compactor:
+    retention_enabled: true
+    delete_request_store: s3
+
+deploymentMode: SimpleScalable
+
+backend:
+  replicas: 2
+  persistence:
+    storageClass: gp3
+    size: 20Gi
+
+read:
+  replicas: 2
+
+write:
+  replicas: 3
+  persistence:
+    storageClass: gp3
+    size: 20Gi
+
+# Promtail - log collector agent (runs as DaemonSet on every node)
+promtail:
+  enabled: true
+  config:
+    clients:
+    - url: http://loki-gateway/loki/api/v1/push
+
+    scrape_configs:
+    - job_name: kubernetes-pods
+      kubernetes_sd_configs:
+      - role: pod
+      pipeline_stages:
+      - cri: {}
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: pod
+      - source_labels: [__meta_kubernetes_pod_container_name]
+        target_label: container
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        target_label: app
+
+    # Capture GPU workload logs specifically
+    - job_name: gpu-workloads
+      kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names: [ai-workloads, kubeflow]
+      pipeline_stages:
+      - cri: {}
+      - json:
+          expressions:
+            level: level
+            message: message
+            gpu_id: gpu_id
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_workload_type]
+        target_label: workload_type
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: namespace
+
+gateway:
+  enabled: true
+  replicas: 1

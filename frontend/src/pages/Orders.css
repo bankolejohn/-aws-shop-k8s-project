@@ -1,0 +1,14 @@
+.order-card { padding: 20px; }
+.order-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+.order-id { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+.order-date { font-size: 13px; color: var(--text-muted); }
+.order-total { font-size: 18px; font-weight: 700; }
+.order-items { display: flex; flex-direction: column; gap: 12px; }
+.order-item { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.order-item img { width: 52px; height: 52px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+.order-item div p { font-weight: 600; margin-bottom: 2px; }
+.order-item div span { color: var(--text-muted); font-size: 13px; }
+
+@media (max-width: 600px) {
+  .order-header { flex-direction: column; gap: 12px; }
+}

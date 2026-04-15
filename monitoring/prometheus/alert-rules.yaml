@@ -1,0 +1,111 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: ai-infrastructure-alerts
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  groups:
+  # GPU Alerts
+  - name: gpu.rules
+    interval: 30s
+    rules:
+    - alert: GPUHighTemperature
+      expr: DCGM_FI_DEV_GPU_TEMP > 85
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "GPU temperature high on {{ $labels.instance }}"
+        description: "GPU {{ $labels.gpu }} temperature is {{ $value }}°C"
+
+    - alert: GPUCriticalTemperature
+      expr: DCGM_FI_DEV_GPU_TEMP > 95
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "GPU temperature critical on {{ $labels.instance }}"
+        description: "GPU {{ $labels.gpu }} temperature is {{ $value }}°C - risk of throttling"
+
+    - alert: GPUMemoryHighUsage
+      expr: (DCGM_FI_DEV_FB_USED / (DCGM_FI_DEV_FB_USED + DCGM_FI_DEV_FB_FREE)) * 100 > 90
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "GPU memory usage high on {{ $labels.instance }}"
+        description: "GPU {{ $labels.gpu }} memory usage is {{ $value }}%"
+
+    - alert: GPUUtilizationLow
+      expr: DCGM_FI_DEV_GPU_UTIL < 10
+      for: 30m
+      labels:
+        severity: info
+      annotations:
+        summary: "GPU underutilized on {{ $labels.instance }}"
+        description: "GPU {{ $labels.gpu }} utilization is only {{ $value }}% - consider scaling down"
+
+  # Kubernetes Cluster Alerts
+  - name: kubernetes.rules
+    rules:
+    - alert: NodeNotReady
+      expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Node {{ $labels.node }} is not ready"
+
+    - alert: PodCrashLooping
+      expr: rate(kube_pod_container_status_restarts_total[15m]) * 60 * 15 > 0
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash looping"
+
+    - alert: PVCStorageNearFull
+      expr: (kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) * 100 > 85
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "PVC {{ $labels.persistentvolumeclaim }} is {{ $value }}% full"
+        description: "Dataset or model storage is running low in namespace {{ $labels.namespace }}"
+
+    - alert: HighMemoryUsage
+      expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 90
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High memory usage on {{ $labels.instance }}"
+
+  # ML Workload Alerts
+  - name: ml-workloads.rules
+    rules:
+    - alert: MLTrainingJobFailed
+      expr: kube_job_status_failed{namespace="ai-workloads"} > 0
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "ML training job {{ $labels.job_name }} failed"
+
+    - alert: InferenceHighLatency
+      expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{app="ml-inference"}[5m])) > 2
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "ML inference p99 latency is {{ $value }}s"
+
+    - alert: InferenceQueueDepthHigh
+      expr: inference_requests_pending > 50
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Inference request queue depth is {{ $value }} - consider scaling up"

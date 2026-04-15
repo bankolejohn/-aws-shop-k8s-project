@@ -1,0 +1,146 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-inference-service
+  namespace: ai-workloads
+  labels:
+    app: ml-inference
+    workload-type: inference
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ml-inference
+  template:
+    metadata:
+      labels:
+        app: ml-inference
+        workload-type: inference
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+
+      nodeSelector:
+        workload-type: ai-ml
+
+      containers:
+      - name: inference
+        image: your-account.dkr.ecr.us-west-2.amazonaws.com/ml-inference:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 8081
+          name: grpc
+
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "1"
+            nvidia.com/gpu: "1"
+          limits:
+            memory: "8Gi"
+            cpu: "2"
+            nvidia.com/gpu: "1"
+
+        env:
+        - name: MODEL_PATH
+          value: "/models"
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: all
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: compute,utility
+
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+        volumeMounts:
+        - name: model-storage
+          mountPath: /models
+          readOnly: true
+
+      volumes:
+      - name: model-storage
+        persistentVolumeClaim:
+          claimName: model-serving-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-inference-service
+  namespace: ai-workloads
+spec:
+  selector:
+    app: ml-inference
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+  - name: grpc
+    port: 8081
+    targetPort: 8081
+  type: ClusterIP
+---
+# HPA for inference - scales on GPU utilization + request queue depth
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ml-inference-hpa
+  namespace: ai-workloads
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ml-inference-service
+  minReplicas: 1
+  maxReplicas: 8
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70
+  # Custom metric - inference request queue depth from Prometheus
+  - type: Pods
+    pods:
+      metric:
+        name: inference_requests_pending
+      target:
+        type: AverageValue
+        averageValue: "10"
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+      - type: Pods
+        value: 2
+        periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 120

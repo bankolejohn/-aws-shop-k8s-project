@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ml-config
+  namespace: ai-workloads
+data:
+  dataset-bucket: "aws-ecommerce-datasets"
+  dataset-name: "product-recommendations"
+  model-output-bucket: "aws-ecommerce-models"
+  model-registry-url: "https://mlflow.yourdomain.com"
+  training-framework: "pytorch"
+  python-version: "3.11"

@@ -1,0 +1,36 @@
+# AWS Configuration
+aws_region = "us-west-2"
+
+# Project Configuration
+project_name = "aws-ecommerce"
+environment  = "dev"
+
+# Network Configuration
+vpc_cidr = "10.0.0.0/16"
+
+# EKS Configuration
+eks_node_groups = {
+  general = {
+    instance_types = ["t3.medium"]
+    min_size      = 1
+    max_size      = 5
+    desired_size  = 3
+  }
+  spot = {
+    instance_types = ["t3.medium", "t3a.medium", "t2.medium"]
+    min_size      = 0
+    max_size      = 10
+    desired_size  = 2
+  }
+}
+
+# RDS Configuration
+rds_instance_class = "db.t3.micro"
+
+# Tags
+common_tags = {
+  Project     = "aws-ecommerce"
+  Environment = "dev"
+  Owner       = "devops-team"
+  CostCenter  = "engineering"
+}

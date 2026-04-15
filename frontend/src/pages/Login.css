@@ -1,0 +1,63 @@
+.login-page {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 48px 24px; background: var(--bg);
+}
+.login-card {
+  width: 100%; max-width: 420px; padding: 40px;
+}
+.login-logo {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 24px; font-weight: 800; color: var(--accent);
+  margin-bottom: 28px; justify-content: center;
+}
+.login-tabs {
+  display: flex; border: 1.5px solid var(--border);
+  border-radius: 10px; overflow: hidden; margin-bottom: 20px;
+}
+.login-tabs button {
+  flex: 1; padding: 10px; font-size: 14px; font-weight: 600;
+  background: none; color: var(--text-muted); transition: all 0.2s;
+}
+.login-tabs button.active { background: var(--accent); color: #fff; }
+
+.login-feedback {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; border-radius: 8px; font-size: 13px;
+  font-weight: 500; margin-bottom: 16px;
+}
+.login-feedback.error { background: rgba(233,69,96,0.1); color: var(--accent); }
+.login-feedback.success { background: rgba(16,185,129,0.1); color: var(--success); }
+
+.login-submit {
+  width: 100%; padding: 12px; justify-content: center;
+  margin-top: 8px; gap: 10px; font-size: 15px;
+}
+.login-submit:disabled { opacity: 0.7; cursor: not-allowed; }
+
+.login-spinner {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.login-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 20px 0 12px; color: var(--text-muted); font-size: 13px;
+}
+.login-divider::before, .login-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+.demo-btn {
+  width: 100%; justify-content: center; padding: 10px;
+  font-size: 14px; color: var(--text-muted);
+}
+.demo-btn:hover { color: var(--accent); }
+
+.login-footer {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; font-size: 12px; color: var(--text-muted); margin-top: 20px;
+}

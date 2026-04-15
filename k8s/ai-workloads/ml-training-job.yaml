@@ -1,0 +1,113 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ml-training-job
+  namespace: ai-workloads
+  labels:
+    app: ml-training
+    workload-type: training
+spec:
+  completions: 1
+  parallelism: 1
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: ml-training
+        workload-type: training
+    spec:
+      restartPolicy: OnFailure
+
+      # Only schedule on GPU nodes
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+
+      nodeSelector:
+        workload-type: ai-ml
+        accelerator: nvidia-tesla-t4
+
+      # Prefer nodes with more GPU memory available
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: workload-type
+                operator: In
+                values: [ai-ml]
+
+      initContainers:
+      # Download dataset from S3 before training starts
+      - name: dataset-downloader
+        image: amazon/aws-cli:latest
+        command:
+        - sh
+        - -c
+        - |
+          aws s3 sync s3://$DATASET_BUCKET/datasets/$DATASET_NAME /data/dataset
+        env:
+        - name: DATASET_BUCKET
+          valueFrom:
+            configMapKeyRef:
+              name: ml-config
+              key: dataset-bucket
+        - name: DATASET_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: ml-config
+              key: dataset-name
+        volumeMounts:
+        - name: dataset-storage
+          mountPath: /data/dataset
+
+      containers:
+      - name: trainer
+        image: your-account.dkr.ecr.us-west-2.amazonaws.com/ml-trainer:latest
+        command: ["python", "train.py"]
+        args:
+        - "--epochs=10"
+        - "--batch-size=32"
+        - "--data-dir=/data/dataset"
+        - "--output-dir=/data/models"
+
+        # Request GPU resource
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "2"
+            nvidia.com/gpu: "1"
+          limits:
+            memory: "16Gi"
+            cpu: "4"
+            nvidia.com/gpu: "1"
+
+        env:
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: all
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: compute,utility
+        - name: MODEL_OUTPUT_BUCKET
+          valueFrom:
+            configMapKeyRef:
+              name: ml-config
+              key: model-output-bucket
+
+        volumeMounts:
+        - name: dataset-storage
+          mountPath: /data/dataset
+        - name: model-storage
+          mountPath: /data/models
+        - name: tmp
+          mountPath: /tmp
+
+      volumes:
+      - name: dataset-storage
+        persistentVolumeClaim:
+          claimName: dataset-pvc
+      - name: model-storage
+        persistentVolumeClaim:
+          claimName: model-output-pvc
+      - name: tmp
+        emptyDir: {}

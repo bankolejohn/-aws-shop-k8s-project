@@ -1,0 +1,25 @@
+.products-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 32px; gap: 16px; flex-wrap: wrap; }
+.products-controls { display: flex; gap: 12px; align-items: center; }
+.products-controls select { width: auto; }
+.products-layout { display: flex; gap: 32px; }
+.products-sidebar { width: 220px; flex-shrink: 0; }
+.sidebar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.sidebar-header h3 { font-size: 16px; font-weight: 700; }
+.sidebar-header button { display: none; }
+.filter-group { margin-bottom: 28px; }
+.filter-group h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 12px; }
+.filter-btn { display: block; width: 100%; text-align: left; padding: 8px 12px; border-radius: 8px; font-size: 14px; background: none; color: var(--text-muted); transition: all 0.2s; margin-bottom: 2px; }
+.filter-btn:hover { background: var(--bg); color: var(--text); }
+.filter-btn.active { background: rgba(233,69,96,0.08); color: var(--accent); font-weight: 600; }
+.price-range-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+.products-grid { flex: 1; min-width: 0; }
+
+@media (max-width: 900px) {
+  .products-sidebar {
+    display: none; position: fixed; top: 0; left: 0; bottom: 0; z-index: 200;
+    width: 280px; background: var(--bg-card); padding: 24px;
+    box-shadow: var(--shadow-lg); overflow-y: auto;
+  }
+  .products-sidebar.open { display: block; }
+  .sidebar-header button { display: flex; }
+}

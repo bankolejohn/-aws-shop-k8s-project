@@ -1,0 +1,75 @@
+.navbar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.navbar-inner {
+  display: flex; align-items: center; gap: 16px; height: 64px;
+}
+.navbar-logo {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 20px; font-weight: 800; color: var(--accent);
+  flex-shrink: 0;
+}
+.navbar-search {
+  flex: 1; max-width: 420px; position: relative;
+  display: flex; align-items: center;
+}
+.navbar-search svg {
+  position: absolute; left: 12px; color: var(--text-muted); pointer-events: none;
+}
+.navbar-search input {
+  padding-left: 38px; height: 38px; border-radius: 999px;
+  background: var(--bg); font-size: 14px;
+}
+.navbar-links {
+  display: flex; align-items: center; gap: 4px; margin-left: auto;
+}
+.navbar-links a {
+  padding: 6px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
+  color: var(--text-muted); transition: all 0.2s;
+}
+.navbar-links a:hover { color: var(--accent); background: rgba(233,69,96,0.06); }
+.navbar-actions {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+.icon-btn {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 8px; color: var(--text);
+  transition: all 0.2s;
+}
+.icon-btn:hover { background: var(--bg); color: var(--accent); }
+.badge-count {
+  position: absolute; top: 2px; right: 2px;
+  background: var(--accent); color: #fff;
+  font-size: 10px; font-weight: 700; min-width: 16px; height: 16px;
+  border-radius: 999px; display: flex; align-items: center; justify-content: center;
+  padding: 0 4px;
+}
+.menu-toggle { display: none; background: none; padding: 6px; border-radius: 8px; }
+
+@media (max-width: 768px) {
+  .navbar-links {
+    display: none; position: absolute; top: 64px; left: 0; right: 0;
+    background: #fff; border-bottom: 1px solid var(--border);
+    flex-direction: column; padding: 12px; gap: 4px;
+  }
+  .navbar-links.open { display: flex; }
+  .navbar-links a { width: 100%; padding: 10px 16px; }
+  .menu-toggle { display: flex; }
+  .navbar-search { max-width: 200px; }
+}
+
+.user-menu {
+  display: flex; align-items: center; gap: 4px;
+}
+.user-avatar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 8px;
+  background: rgba(233,69,96,0.08); color: var(--accent);
+  font-size: 13px; font-weight: 600;
+}
+.logout-btn {
+  padding: 6px 8px; color: var(--text-muted);
+}
+.logout-btn:hover { color: var(--accent); }
