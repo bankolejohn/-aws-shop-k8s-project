@@ -1,12 +1,9 @@
 name: Infrastructure Deployment
 
+# Triggers disabled temporarily during active development.
+# Re-enable by restoring the push/pull_request triggers below.
 on:
-  push:
-    branches: [ main ]
-    paths: [ 'infrastructure/**' ]
-  pull_request:
-    branches: [ main ]
-    paths: [ 'infrastructure/**' ]
+  workflow_dispatch:
 
 env:
   AWS_REGION: us-west-2
